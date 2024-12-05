@@ -1,0 +1,7 @@
+node_modules
+log
+tmp
+/public/**
+!public/.gitkeep
+
+.env
