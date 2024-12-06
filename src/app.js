@@ -68,7 +68,7 @@ var corsOptions = {
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(userAgent.express());
-app.use('/api/v1/auth/stripe-webhook', express.raw({ type: 'application/json' }));
+// app.use('/api/v1/auth/stripe-webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 // app.use(morgan("combined", {stream: accessLogStream}));
 app.use(fileUpload({

@@ -5,7 +5,7 @@ const { generateAccessToken, generateRefreshToken } = require("../utils/jwt");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const { deleteUserRefreshTokensDB, updateUserPasswordDB } = require("../services/user.service");
-const stripe = require('stripe')(CONFIG.STRIPE_SECRET);
+// const stripe = require('stripe')(CONFIG.STRIPE_SECRET);
 
 
 exports.signIn = async (req, res) => {
@@ -437,9 +437,9 @@ exports.cancelSubscription = async (req, res) => {
             });
         }
 
-        const subscription = await stripe.subscriptions.cancel(
-            id
-        );
+        // const subscription = await stripe.subscriptions.cancel(
+        //     id
+        // );
 
         // generate new access token
         // set cookie
@@ -477,160 +477,160 @@ exports.cancelSubscription = async (req, res) => {
     }
 };
 
-exports.stripeProductSubscriptionLookup = async (req, res) => {
-    try {
-        const productId = req.body.id;
-        const user = req.user;
+// exports.stripeProductSubscriptionLookup = async (req, res) => {
+//     try {
+//         const productId = req.body.id;
+//         const user = req.user;
 
-        // const prices = await stripe.prices.list({
-        //     lookup_keys: [productId],
-        //     expand: ['data.product'],
-        // });
+//         // const prices = await stripe.prices.list({
+//         //     lookup_keys: [productId],
+//         //     expand: ['data.product'],
+//         // });
 
-        // console.log(prices);
+//         // console.log(prices);
 
-        const session = await stripe.checkout.sessions.create({
-            billing_address_collection: 'auto',
-            customer_email: user.username,
-            metadata: {
-                tenant_id: user.tenant_id,
-            },
-            line_items: [
-                {
-                    price: productId,
-                    // price: prices.data[0].id,
-                    quantity: 1,
-                },
-            ],
-            mode: 'subscription',
-            success_url: `${CONFIG.FRONTEND_DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${CONFIG.FRONTEND_DOMAIN}/cancelled-payment`,
-        });
+//         const session = await stripe.checkout.sessions.create({
+//             billing_address_collection: 'auto',
+//             customer_email: user.username,
+//             metadata: {
+//                 tenant_id: user.tenant_id,
+//             },
+//             line_items: [
+//                 {
+//                     price: productId,
+//                     // price: prices.data[0].id,
+//                     quantity: 1,
+//                 },
+//             ],
+//             mode: 'subscription',
+//             success_url: `${CONFIG.FRONTEND_DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
+//             cancel_url: `${CONFIG.FRONTEND_DOMAIN}/cancelled-payment`,
+//         });
 
-        return res.status(200).json({
-            success: true,
-            url: session.url,
-        });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            success: false,
-            message: "Can't retrieve product subscription right now! Please try after sometime!"
-        });
-    }
-}
+//         return res.status(200).json({
+//             success: true,
+//             url: session.url,
+//         });
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(500).json({
+//             success: false,
+//             message: "Can't retrieve product subscription right now! Please try after sometime!"
+//         });
+//     }
+// }
 
-exports.stripeWebhook = async (request, response) => {
-    let event = request.body;
-    // Replace this endpoint secret with your endpoint's unique secret
-    // If you are testing with the CLI, find the secret by running 'stripe listen'
-    // If you are using an endpoint defined with the API or dashboard, look in your webhook settings
-    // at https://dashboard.stripe.com/webhooks
-    const endpointSecret = CONFIG.STRIPE_WEBHOOK_SECRET;
-    // Only verify the event if you have an endpoint secret defined.
-    // Otherwise use the basic event deserialized with JSON.parse
-    if (endpointSecret) {
-      // Get the signature sent by Stripe
-      const signature = request.headers['stripe-signature'];
-      try {
-        event = stripe.webhooks.constructEvent(
-          request.body,
-          signature,
-          endpointSecret
-        );
-      } catch (err) {
-        console.log(`⚠️  Webhook signature verification failed.`, err.message);
-        return response.sendStatus(400);
-      }
-    }
-    let subscription;
-    let status;
-    let customerEmail;
+// exports.stripeWebhook = async (request, response) => {
+//     let event = request.body;
+//     // Replace this endpoint secret with your endpoint's unique secret
+//     // If you are testing with the CLI, find the secret by running 'stripe listen'
+//     // If you are using an endpoint defined with the API or dashboard, look in your webhook settings
+//     // at https://dashboard.stripe.com/webhooks
+//     const endpointSecret = CONFIG.STRIPE_WEBHOOK_SECRET;
+//     // Only verify the event if you have an endpoint secret defined.
+//     // Otherwise use the basic event deserialized with JSON.parse
+//     if (endpointSecret) {
+//       // Get the signature sent by Stripe
+//       const signature = request.headers['stripe-signature'];
+//       try {
+//         event = stripe.webhooks.constructEvent(
+//           request.body,
+//           signature,
+//           endpointSecret
+//         );
+//       } catch (err) {
+//         console.log(`⚠️  Webhook signature verification failed.`, err.message);
+//         return response.sendStatus(400);
+//       }
+//     }
+//     let subscription;
+//     let status;
+//     let customerEmail;
 
-    // console.log(subscription);
-    /*
-    id, current_period_start, current_period_end, customer
-    */
-    subscription = event?.data?.object;
-    status = subscription?.status;
+//     // console.log(subscription);
+//     /*
+//     id, current_period_start, current_period_end, customer
+//     */
+//     subscription = event?.data?.object;
+//     status = subscription?.status;
 
-    const stripeCustomerId = subscription?.customer;
-    const subscriptionId = subscription?.id;
-    const subscriptionStart = subscription?.current_period_start;
-    const subscriptionEnd = subscription?.current_period_end;
+//     const stripeCustomerId = subscription?.customer;
+//     const subscriptionId = subscription?.id;
+//     const subscriptionStart = subscription?.current_period_start;
+//     const subscriptionEnd = subscription?.current_period_end;
 
-    const startDate = new Date(subscriptionStart * 1000);
-    const endDate = new Date(subscriptionEnd * 1000);
+//     const startDate = new Date(subscriptionStart * 1000);
+//     const endDate = new Date(subscriptionEnd * 1000);
 
-    const startDateStr = `${startDate.getFullYear()}-${(startDate.getMonth()+1).toString().padStart(2,'0')}-${startDate.getDate().toString().padStart(2,'0')}`;
-    const endDateStr = `${endDate.getFullYear()}-${(endDate.getMonth()+1).toString().padStart(2,'0')}-${endDate.getDate().toString().padStart(2,'0')}`;
+//     const startDateStr = `${startDate.getFullYear()}-${(startDate.getMonth()+1).toString().padStart(2,'0')}-${startDate.getDate().toString().padStart(2,'0')}`;
+//     const endDateStr = `${endDate.getFullYear()}-${(endDate.getMonth()+1).toString().padStart(2,'0')}-${endDate.getDate().toString().padStart(2,'0')}`;
 
-    // get customer email
-    try {
-        const customer = await stripe.customers.retrieve(stripeCustomerId);
-        customerEmail = customer?.email;
-    } catch (error) {
-        console.error("Error getting customer from stripe =>");
-        console.error(error);
-    }
+//     // get customer email
+//     try {
+//         const customer = await stripe.customers.retrieve(stripeCustomerId);
+//         customerEmail = customer?.email;
+//     } catch (error) {
+//         console.error("Error getting customer from stripe =>");
+//         console.error(error);
+//     }
 
-    const tenantId = await getTenantIdFromCustomerEmail(customerEmail);
+//     const tenantId = await getTenantIdFromCustomerEmail(customerEmail);
 
-    // Handle the event
-    try {
-        switch (event.type) {
-            case 'customer.subscription.trial_will_end':
+//     // Handle the event
+//     try {
+//         switch (event.type) {
+//             case 'customer.subscription.trial_will_end':
 
-              console.log(`Subscription status is ${status}.`);
-              // Then define and call a method to handle the subscription trial ending.
-              // handleSubscriptionTrialEnding(subscription);
-              break;
-            case 'customer.subscription.deleted':
-              console.log(`Subscription status is ${status}.`);
-              // Then define and call a method to handle the subscription deleted.
-              // handleSubscriptionDeleted(subscriptionDeleted);
-              await updateTenantSubscriptionAccess(customerEmail, 0, subscriptionId, stripeCustomerId, startDateStr, endDateStr);
+//               console.log(`Subscription status is ${status}.`);
+//               // Then define and call a method to handle the subscription trial ending.
+//               // handleSubscriptionTrialEnding(subscription);
+//               break;
+//             case 'customer.subscription.deleted':
+//               console.log(`Subscription status is ${status}.`);
+//               // Then define and call a method to handle the subscription deleted.
+//               // handleSubscriptionDeleted(subscriptionDeleted);
+//               await updateTenantSubscriptionAccess(customerEmail, 0, subscriptionId, stripeCustomerId, startDateStr, endDateStr);
 
-              await updateSubscriptionHistory(tenantId, startDateStr, endDateStr , 'cancelled');
+//               await updateSubscriptionHistory(tenantId, startDateStr, endDateStr , 'cancelled');
 
-              break;
-            case 'customer.subscription.created':
-              console.log(`Subscription status is ${status}.`);
-              // Then define and call a method to handle the subscription created.
-              // handleSubscriptionCreated(subscription);
-              await updateTenantSubscriptionAccess(customerEmail, 1, subscriptionId, stripeCustomerId, startDateStr, endDateStr);
+//               break;
+//             case 'customer.subscription.created':
+//               console.log(`Subscription status is ${status}.`);
+//               // Then define and call a method to handle the subscription created.
+//               // handleSubscriptionCreated(subscription);
+//               await updateTenantSubscriptionAccess(customerEmail, 1, subscriptionId, stripeCustomerId, startDateStr, endDateStr);
 
-              await updateSubscriptionHistory(tenantId, startDateStr, endDateStr , 'created');
+//               await updateSubscriptionHistory(tenantId, startDateStr, endDateStr , 'created');
 
-              break;
-            case 'customer.subscription.updated':
-              console.log(`Subscription status is ${status}.`);
-              // Then define and call a method to handle the subscription update.
-              // handleSubscriptionUpdated(subscription);
-              if(status == 'active') {
-                  await updateTenantSubscriptionAccess(customerEmail, 1, subscriptionId, stripeCustomerId, startDateStr, endDateStr);
-                  await updateSubscriptionHistory(tenantId, startDateStr, endDateStr , 'updated');
+//               break;
+//             case 'customer.subscription.updated':
+//               console.log(`Subscription status is ${status}.`);
+//               // Then define and call a method to handle the subscription update.
+//               // handleSubscriptionUpdated(subscription);
+//               if(status == 'active') {
+//                   await updateTenantSubscriptionAccess(customerEmail, 1, subscriptionId, stripeCustomerId, startDateStr, endDateStr);
+//                   await updateSubscriptionHistory(tenantId, startDateStr, endDateStr , 'updated');
 
-              } else {
-                  await updateTenantSubscriptionAccess(customerEmail, 0, subscriptionId, stripeCustomerId, startDateStr, endDateStr);
-                 await updateSubscriptionHistory(tenantId, startDateStr, endDateStr , 'updated');
+//               } else {
+//                   await updateTenantSubscriptionAccess(customerEmail, 0, subscriptionId, stripeCustomerId, startDateStr, endDateStr);
+//                  await updateSubscriptionHistory(tenantId, startDateStr, endDateStr , 'updated');
 
-              }
-              break;
-            case 'entitlements.active_entitlement_summary.updated':
-              console.log(`Active entitlement summary updated for ${subscription}.`);
-              // Then define and call a method to handle active entitlement summary updated
-              // handleEntitlementUpdated(subscription);
-              break;
-            default:
-              // Unexpected event type
-              console.log(`Unhandled event type ${event.type}.`);
-          }
-    } catch (error) {
-        console.error(error);
-    }
+//               }
+//               break;
+//             case 'entitlements.active_entitlement_summary.updated':
+//               console.log(`Active entitlement summary updated for ${subscription}.`);
+//               // Then define and call a method to handle active entitlement summary updated
+//               // handleEntitlementUpdated(subscription);
+//               break;
+//             default:
+//               // Unexpected event type
+//               console.log(`Unhandled event type ${event.type}.`);
+//           }
+//     } catch (error) {
+//         console.error(error);
+//     }
 
 
-    // Return a 200 response to acknowledge receipt of the event
-    response.send();
-}
+//     // Return a 200 response to acknowledge receipt of the event
+//     response.send();
+// }
