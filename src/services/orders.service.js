@@ -1,9 +1,8 @@
-const { getMySqlPromiseConnection } = require("../config/mysql.db")
+const {getMySqlPromiseConnection} = require('../config/mysql.db');
 
-exports.getOrdersDB = async (tenantId) => {
+exports.getOrdersDB = async tenantId => {
   const conn = await getMySqlPromiseConnection();
   try {
-
     const sql = `
     SELECT
       o.id,
@@ -17,11 +16,14 @@ exports.getOrdersDB = async (tenantId) => {
       st. \`floor\`,
       o.status,
       o.payment_status,
-      o.token_no
+      o.token_no,
+      payment_types.title as paymentType,
+      payment_types.id as paymentTypeId
     FROM
       orders o
       LEFT JOIN customers c ON o.customer_id = c.phone
       LEFT JOIN store_tables st ON o.table_id = st.id
+      LEFT JOIN payment_types ON payment_types.id = o.payment_type_id
     WHERE
       date >= DATE_SUB(NOW(), INTERVAL 1 DAY)
       AND date <= DATE_ADD(NOW(), INTERVAL 1 DAY)
@@ -34,8 +36,8 @@ exports.getOrdersDB = async (tenantId) => {
     let kitchenOrdersItems = [];
     let addons = [];
 
-    if(kitchenOrders.length > 0) {
-      const orderIds = kitchenOrders.map(o=>o.id).join(",");
+    if (kitchenOrders.length > 0) {
+      const orderIds = kitchenOrders.map(o => o.id).join(',');
       const sql2 = `
       SELECT
         oi.id,
@@ -56,32 +58,40 @@ exports.getOrdersDB = async (tenantId) => {
         LEFT join menu_item_variants miv ON oi.item_id = miv.item_id AND oi.variant_id = miv.id
         
       WHERE oi.order_id IN (${orderIds})
-      `
+      `;
       const [kitchenOrdersItemsResult] = await conn.query(sql2);
       kitchenOrdersItems = kitchenOrdersItemsResult;
 
-      const addonIds = [...new Set([...kitchenOrdersItems.flatMap((o)=>o.addons?JSON.parse(o?.addons):[])])].join(",");
-      const [addonsResult] = addonIds ? await conn.query(`SELECT id, item_id, title FROM menu_item_addons WHERE id IN (${addonIds});`):[]
+      const addonIds = [
+        ...new Set([
+          ...kitchenOrdersItems.flatMap(o =>
+            o.addons ? JSON.parse(o?.addons) : [],
+          ),
+        ]),
+      ].join(',');
+      const [addonsResult] = addonIds
+        ? await conn.query(
+            `SELECT id, item_id, title FROM menu_item_addons WHERE id IN (${addonIds});`,
+          )
+        : [];
       addons = addonsResult;
     }
     return {
       kitchenOrders,
       kitchenOrdersItems,
-      addons
-    }
-    
+      addons,
+    };
   } catch (error) {
     console.error(error);
     throw error;
   } finally {
     conn.release();
-}
+  }
 };
 
 exports.updateOrderItemStatusDB = async (orderItemId, status, tenantId) => {
   const conn = await getMySqlPromiseConnection();
   try {
-
     const sql = `
     UPDATE order_items SET
     status = ?
@@ -89,21 +99,20 @@ exports.updateOrderItemStatusDB = async (orderItemId, status, tenantId) => {
     `;
 
     await conn.query(sql, [status, orderItemId, tenantId]);
-    
+
     return;
   } catch (error) {
     console.error(error);
     throw error;
   } finally {
     conn.release();
-}
+  }
 };
 
 exports.cancelOrderDB = async (orderIds, tenantId) => {
   const conn = await getMySqlPromiseConnection();
   try {
-
-    const orderIdsText = orderIds.join(",");
+    const orderIdsText = orderIds.join(',');
 
     const sql = `
     UPDATE orders SET
@@ -116,17 +125,15 @@ exports.cancelOrderDB = async (orderIds, tenantId) => {
   } catch (error) {
     console.error(error);
     throw error;
-  }
-  finally {
+  } finally {
     conn.release();
-}
+  }
 };
 
 exports.completeOrderDB = async (orderIds, tenantId) => {
   const conn = await getMySqlPromiseConnection();
   try {
-
-    const orderIdsText = orderIds.join(",");
+    const orderIdsText = orderIds.join(',');
 
     const sql = `
     UPDATE orders SET
@@ -135,20 +142,19 @@ exports.completeOrderDB = async (orderIds, tenantId) => {
     `;
 
     await conn.query(sql, [tenantId]);
-    
+
     return;
   } catch (error) {
     console.error(error);
     throw error;
   } finally {
     conn.release();
-}
+  }
 };
 
 exports.getOrdersPaymentSummaryDB = async (orderIdsToFindSummary, tenantId) => {
   const conn = await getMySqlPromiseConnection();
   try {
-
     const sql = `
     SELECT
       o.id,
@@ -179,8 +185,8 @@ exports.getOrdersPaymentSummaryDB = async (orderIdsToFindSummary, tenantId) => {
     let kitchenOrdersItems = [];
     let addons = [];
 
-    if(kitchenOrders.length > 0) {
-      const orderIds = kitchenOrders.map(o=>o.id).join(",");
+    if (kitchenOrders.length > 0) {
+      const orderIds = kitchenOrders.map(o => o.id).join(',');
       const sql2 = `
       SELECT
         oi.id,
@@ -207,28 +213,36 @@ exports.getOrdersPaymentSummaryDB = async (orderIdsToFindSummary, tenantId) => {
         LEFT JOIN taxes t ON mi.tax_id = t.id
         
       WHERE oi.order_id IN (${orderIds}) AND oi.status NOT IN ('cancelled')
-      `
+      `;
       const [kitchenOrdersItemsResult] = await conn.query(sql2);
       kitchenOrdersItems = kitchenOrdersItemsResult;
 
-      const addonIds = [...new Set([...kitchenOrdersItems.flatMap((o)=>o.addons?JSON.parse(o?.addons):[])])].join(",");
-      const [addonsResult] = addonIds ? await conn.query(`SELECT id, item_id, title, price FROM menu_item_addons WHERE id IN (${addonIds});`):[]
+      const addonIds = [
+        ...new Set([
+          ...kitchenOrdersItems.flatMap(o =>
+            o.addons ? JSON.parse(o?.addons) : [],
+          ),
+        ]),
+      ].join(',');
+      const [addonsResult] = addonIds
+        ? await conn.query(
+            `SELECT id, item_id, title, price FROM menu_item_addons WHERE id IN (${addonIds});`,
+          )
+        : [];
       addons = addonsResult;
     }
-
 
     return {
       kitchenOrders,
       kitchenOrdersItems,
-      addons
-    }
-    
+      addons,
+    };
   } catch (error) {
     console.error(error);
     throw error;
   } finally {
     conn.release();
-}
+  }
 };
 
 exports.createInvoiceDB = async (subtotal, taxTotal, total, date, tenantId) => {
@@ -238,7 +252,10 @@ exports.createInvoiceDB = async (subtotal, taxTotal, total, date, tenantId) => {
 
     let invoiceId = 0;
 
-    const [invoiceSequence] = await conn.query("SELECT sequence_no FROM invoice_sequences WHERE tenant_id = ? LIMIT 1 FOR UPDATE", [tenantId]);
+    const [invoiceSequence] = await conn.query(
+      'SELECT sequence_no FROM invoice_sequences WHERE tenant_id = ? LIMIT 1 FOR UPDATE',
+      [tenantId],
+    );
     invoiceId = invoiceSequence[0]?.sequence_no || 0;
 
     invoiceId += 1;
@@ -250,9 +267,19 @@ exports.createInvoiceDB = async (subtotal, taxTotal, total, date, tenantId) => {
     (?, ?, ?, ?, ?, ?)
     `;
 
-    await conn.query(sql, [invoiceId, subtotal, taxTotal, total, date, tenantId]);
+    await conn.query(sql, [
+      invoiceId,
+      subtotal,
+      taxTotal,
+      total,
+      date,
+      tenantId,
+    ]);
 
-    await conn.query("INSERT INTO invoice_sequences ( sequence_no, tenant_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE sequence_no = VALUES(sequence_no);", [invoiceId, tenantId]);
+    await conn.query(
+      'INSERT INTO invoice_sequences ( sequence_no, tenant_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE sequence_no = VALUES(sequence_no);',
+      [invoiceId, tenantId],
+    );
 
     await conn.commit();
 
@@ -264,22 +291,26 @@ exports.createInvoiceDB = async (subtotal, taxTotal, total, date, tenantId) => {
   } finally {
     conn.release();
   }
-}
+};
 
-exports.completeOrdersAndSaveInvoiceIdDB = async (orderIds, invoiceId, tenantId) => {
+exports.completeOrdersAndSaveInvoiceIdDB = async (
+  orderIds,
+  invoiceId,
+  tenantId,
+  paymentTypeId,
+) => {
   const conn = await getMySqlPromiseConnection();
   try {
-
-    const orderIdsText = orderIds.join(",");
+    const orderIdsText = orderIds.join(',');
 
     const sql = `
     UPDATE orders SET
-    status = 'completed', payment_status = 'paid', invoice_id = ?
+    status = 'completed', payment_status = 'paid', invoice_id = ?, payment_type_id = ?
     WHERE id IN (${orderIdsText}) AND tenant_id = ?;
     `;
 
-    await conn.query(sql, [invoiceId, tenantId]);
-    
+    await conn.query(sql, [invoiceId, paymentTypeId, tenantId]);
+
     return;
   } catch (error) {
     console.error(error);
@@ -287,4 +318,4 @@ exports.completeOrdersAndSaveInvoiceIdDB = async (orderIds, invoiceId, tenantId)
   } finally {
     conn.release();
   }
-}
+};

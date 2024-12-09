@@ -1,25 +1,37 @@
-const { getOrdersDB, updateOrderItemStatusDB, cancelOrderDB, completeOrderDB, getOrdersPaymentSummaryDB, createInvoiceDB, completeOrdersAndSaveInvoiceIdDB } = require("../services/orders.service");
+const {
+  getOrdersDB,
+  updateOrderItemStatusDB,
+  cancelOrderDB,
+  completeOrderDB,
+  getOrdersPaymentSummaryDB,
+  createInvoiceDB,
+  completeOrdersAndSaveInvoiceIdDB,
+} = require('../services/orders.service');
 const {
   getPaymentTypesDB,
   getPrintSettingDB,
   getStoreSettingDB,
-} = require("../services/settings.service");
+} = require('../services/settings.service');
 
 exports.getOrders = async (req, res) => {
   try {
     const tenantId = req.user.tenant_id;
 
-    const {kitchenOrders,kitchenOrdersItems,addons} = await getOrdersDB(tenantId);
+    const {kitchenOrders, kitchenOrdersItems, addons} = await getOrdersDB(
+      tenantId,
+    );
 
-    const formattedOrders = kitchenOrders.map((order)=>{
-      const orderItems = kitchenOrdersItems.filter((oi)=>oi.order_id == order.id);
-      
-      orderItems.forEach((oi, index)=>{
+    const formattedOrders = kitchenOrders.map(order => {
+      const orderItems = kitchenOrdersItems.filter(
+        oi => oi.order_id == order.id,
+      );
+
+      orderItems.forEach((oi, index) => {
         const addonsIds = oi?.addons ? JSON.parse(oi?.addons) : null;
 
-        if(addonsIds) {
-          const itemAddons = addonsIds.map((addonId)=>{
-            const addon = addons.filter((a)=>a.id == addonId);
+        if (addonsIds) {
+          const itemAddons = addonsIds.map(addonId => {
+            const addon = addons.filter(a => a.id == addonId);
             return addon[0];
           });
           orderItems[index].addons = [...itemAddons];
@@ -28,51 +40,52 @@ exports.getOrders = async (req, res) => {
 
       return {
         ...order,
-        items: orderItems
-      }
-    })
+        items: orderItems,
+      };
+    });
 
     // group orders based on table id
     let ordersGroupedByTable = [];
-    
+
     for (const order of formattedOrders) {
-        const tableId = order.table_id;
+      const tableId = order.table_id;
 
-        if(!tableId) {
-            ordersGroupedByTable.push({
-                table_id: tableId,
-                table_title: order.table_title,
-                floor: order.floor,
-                orders: [{...order}],
-                order_ids: [order.id],
-            })
-            continue;
-        }
+      if (!tableId) {
+        ordersGroupedByTable.push({
+          table_id: tableId,
+          table_title: order.table_title,
+          floor: order.floor,
+          orders: [{...order}],
+          order_ids: [order.id],
+        });
+        continue;
+      }
 
-        const orderIndex = ordersGroupedByTable.findIndex(o=>o.table_id==tableId);
-        if(orderIndex == -1) {
-            ordersGroupedByTable.push({
-                table_id: tableId,
-                table_title: order.table_title,
-                floor: order.floor,
-                orders: [{...order}],
-                order_ids: [order.id],
-            })
-        } else {
-            ordersGroupedByTable[orderIndex].orders.push({...order})
-            ordersGroupedByTable[orderIndex].order_ids.push(order.id)
-        }
+      const orderIndex = ordersGroupedByTable.findIndex(
+        o => o.table_id == tableId,
+      );
+      if (orderIndex == -1) {
+        ordersGroupedByTable.push({
+          table_id: tableId,
+          table_title: order.table_title,
+          floor: order.floor,
+          orders: [{...order}],
+          order_ids: [order.id],
+        });
+      } else {
+        ordersGroupedByTable[orderIndex].orders.push({...order});
+        ordersGroupedByTable[orderIndex].order_ids.push(order.id);
+      }
     }
 
     // add orders where table not present
-
 
     return res.status(200).json(ordersGroupedByTable);
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong! Please try later!",
+      message: 'Something went wrong! Please try later!',
     });
   }
 };
@@ -95,7 +108,7 @@ exports.getOrdersInit = async (req, res) => {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong! Please try later!",
+      message: 'Something went wrong! Please try later!',
     });
   }
 };
@@ -104,26 +117,26 @@ exports.updateKitchenOrderItemStatus = async (req, res) => {
   try {
     const tenantId = req.user.tenant_id;
     const orderItemId = req.params.id;
-    const { status } = req.body
+    const {status} = req.body;
 
-    if(!status) {
+    if (!status) {
       return res.status(400).json({
         success: false,
-        message: "Invalid Request!"
+        message: 'Invalid Request!',
       });
     }
 
-    await updateOrderItemStatusDB(orderItemId, status, tenantId)
+    await updateOrderItemStatusDB(orderItemId, status, tenantId);
 
     return res.status(200).json({
       success: true,
-      message: "Order Item Status updated"
+      message: 'Order Item Status updated',
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong! Please try later!",
+      message: 'Something went wrong! Please try later!',
     });
   }
 };
@@ -131,12 +144,12 @@ exports.updateKitchenOrderItemStatus = async (req, res) => {
 exports.cancelKitchenOrder = async (req, res) => {
   try {
     const tenantId = req.user.tenant_id;
-    const { orderIds } = req.body
+    const {orderIds} = req.body;
 
-    if(!orderIds || orderIds?.length == 0) {
+    if (!orderIds || orderIds?.length == 0) {
       return res.status(400).json({
         success: false,
-        message: "Invalid Request!"
+        message: 'Invalid Request!',
       });
     }
 
@@ -144,13 +157,13 @@ exports.cancelKitchenOrder = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Order Cancelled Successfully!"
+      message: 'Order Cancelled Successfully!',
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong! Please try later!",
+      message: 'Something went wrong! Please try later!',
     });
   }
 };
@@ -158,12 +171,12 @@ exports.cancelKitchenOrder = async (req, res) => {
 exports.completeKitchenOrder = async (req, res) => {
   try {
     const tenantId = req.user.tenant_id;
-    const { orderIds } = req.body
+    const {orderIds} = req.body;
 
-    if(!orderIds || orderIds?.length == 0) {
+    if (!orderIds || orderIds?.length == 0) {
       return res.status(400).json({
         success: false,
-        message: "Invalid Request!"
+        message: 'Invalid Request!',
       });
     }
 
@@ -171,13 +184,13 @@ exports.completeKitchenOrder = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Order Completed Successfully!"
+      message: 'Order Completed Successfully!',
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong! Please try later!",
+      message: 'Something went wrong! Please try later!',
     });
   }
 };
@@ -187,26 +200,29 @@ exports.getOrdersPaymentSummary = async (req, res) => {
     const tenantId = req.user.tenant_id;
     const orderIds = req.body.orderIds;
 
-    if(!orderIds || orderIds?.length == 0) {
+    if (!orderIds || orderIds?.length == 0) {
       return res.status(400).JSON({
         success: false,
-        message: "Invalid Request!"
+        message: 'Invalid Request!',
       });
     }
 
-    const orderIdsParams = orderIds.join(",");
+    const orderIdsParams = orderIds.join(',');
 
-    const {kitchenOrders,kitchenOrdersItems,addons} = await getOrdersPaymentSummaryDB(orderIdsParams, tenantId);
+    const {kitchenOrders, kitchenOrdersItems, addons} =
+      await getOrdersPaymentSummaryDB(orderIdsParams, tenantId);
 
-    const formattedOrders = kitchenOrders.map((order)=>{
-      const orderItems = kitchenOrdersItems.filter((oi)=>oi.order_id == order.id);
-      
-      orderItems.forEach((oi, index)=>{
+    const formattedOrders = kitchenOrders.map(order => {
+      const orderItems = kitchenOrdersItems.filter(
+        oi => oi.order_id == order.id,
+      );
+
+      orderItems.forEach((oi, index) => {
         const addonsIds = oi?.addons ? JSON.parse(oi?.addons) : null;
 
-        if(addonsIds) {
-          const itemAddons = addonsIds.map((addonId)=>{
-            const addon = addons.filter((a)=>a.id == addonId);
+        if (addonsIds) {
+          const itemAddons = addonsIds.map(addonId => {
+            const addon = addons.filter(a => a.id == addonId);
             return addon[0];
           });
           orderItems[index].addons = [...itemAddons];
@@ -215,11 +231,10 @@ exports.getOrdersPaymentSummary = async (req, res) => {
 
       return {
         ...order,
-        items: orderItems
-      }
-    })
+        items: orderItems,
+      };
+    });
 
-    
     // calculate summary
     let subtotal = 0;
     let taxTotal = 0;
@@ -230,66 +245,71 @@ exports.getOrdersPaymentSummary = async (req, res) => {
 
       for (let index = 0; index < items.length; index++) {
         const item = items[index];
-        
-        const { variant_price, price, tax_rate, tax_type: taxType, quantity, addons } = item;
+
+        const {
+          variant_price,
+          price,
+          tax_rate,
+          tax_type: taxType,
+          quantity,
+          addons,
+        } = item;
 
         const taxRate = Number(tax_rate);
 
         // const addonsTotal = addons ? addons?.reduce((pV, cV)=>Number(pV?.price || 0 )+ Number(cV?.price), 0) : 0;
         let addonsTotal = 0;
-        if(addons) {
+        if (addons) {
           for (const addon of addons) {
-            addonsTotal += Number(addon.price)
+            addonsTotal += Number(addon.price);
           }
         }
-        
-        const itemPrice = (Number(variant_price?variant_price:price) * Number(quantity));
 
-        if (taxType == "exclusive") {
+        const itemPrice =
+          Number(variant_price ? variant_price : price) * Number(quantity);
+
+        if (taxType == 'exclusive') {
           const tax = (itemPrice * taxRate) / 100;
           const priceWithTax = itemPrice + tax;
-  
-          taxTotal += tax;
-          subtotal += itemPrice + (addonsTotal * quantity);
-          total += priceWithTax  + (addonsTotal * quantity);
 
-          items[index].itemTotal = (priceWithTax/quantity) + addonsTotal;
-          items[index].price = (priceWithTax/quantity) + addonsTotal;
-        } else if (taxType == "inclusive") {
-          const tax = itemPrice - (itemPrice * (100 / (100 + taxRate)));
+          taxTotal += tax;
+          subtotal += itemPrice + addonsTotal * quantity;
+          total += priceWithTax + addonsTotal * quantity;
+
+          items[index].itemTotal = priceWithTax / quantity + addonsTotal;
+          items[index].price = priceWithTax / quantity + addonsTotal;
+        } else if (taxType == 'inclusive') {
+          const tax = itemPrice - itemPrice * (100 / (100 + taxRate));
           const priceWithoutTax = itemPrice - tax;
-          
+
           taxTotal += tax;
-          subtotal += priceWithoutTax + (addonsTotal * quantity);
-          total += itemPrice + (addonsTotal * quantity);
+          subtotal += priceWithoutTax + addonsTotal * quantity;
+          total += itemPrice + addonsTotal * quantity;
 
-          items[index].itemTotal = (itemPrice/quantity) + addonsTotal;
-          items[index].price = (itemPrice/quantity) + addonsTotal;
+          items[index].itemTotal = itemPrice / quantity + addonsTotal;
+          items[index].price = itemPrice / quantity + addonsTotal;
         } else {
-          subtotal += itemPrice + (addonsTotal * quantity);
-          total += itemPrice + (addonsTotal * quantity);
+          subtotal += itemPrice + addonsTotal * quantity;
+          total += itemPrice + addonsTotal * quantity;
 
-          items[index].itemTotal = (itemPrice/quantity) + addonsTotal;
-          items[index].price = (itemPrice/quantity) + addonsTotal;
+          items[index].itemTotal = itemPrice / quantity + addonsTotal;
+          items[index].price = itemPrice / quantity + addonsTotal;
         }
       }
-
     }
     // calculate summary
 
-
-
     return res.status(200).json({
-      subtotal, 
-      taxTotal, 
+      subtotal,
+      taxTotal,
       total,
-      orders: formattedOrders
+      orders: formattedOrders,
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong! Please try later!",
+      message: 'Something went wrong! Please try later!',
     });
   }
 };
@@ -297,32 +317,51 @@ exports.getOrdersPaymentSummary = async (req, res) => {
 exports.payAndCompleteKitchenOrder = async (req, res) => {
   try {
     const tenantId = req.user.tenant_id;
-    const { orderIds, subTotal, taxTotal, total } = req.body
+    const {orderIds, subTotal, taxTotal, total, paymentTypeId} = req.body;
 
-    if(!orderIds || orderIds?.length == 0) {
+    if (!orderIds || orderIds?.length == 0) {
       return res.status(400).json({
         success: false,
-        message: "Invalid Request!"
+        message: 'Invalid Request!',
       });
     }
 
     const now = new Date();
-    const date = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+    const date = `${now.getFullYear()}-${(now.getMonth() + 1)
+      .toString()
+      .padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now
+      .getHours()
+      .toString()
+      .padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now
+      .getSeconds()
+      .toString()
+      .padStart(2, '0')}`;
 
     // get invoice id
-    const invoiceId = await createInvoiceDB(subTotal, taxTotal, total, date, tenantId);
+    const invoiceId = await createInvoiceDB(
+      subTotal,
+      taxTotal,
+      total,
+      date,
+      tenantId,
+    );
 
-    await completeOrdersAndSaveInvoiceIdDB(orderIds, invoiceId, tenantId);
+    await completeOrdersAndSaveInvoiceIdDB(
+      orderIds,
+      invoiceId,
+      tenantId,
+      paymentTypeId,
+    );
 
     return res.status(200).json({
       success: true,
-      message: "Order Completed Successfully!"
+      message: 'Order Completed Successfully!',
     });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong! Please try later!",
+      message: 'Something went wrong! Please try later!',
     });
   }
 };

@@ -1,12 +1,12 @@
-const { Router } = require("express");
+const {Router} = require('express');
 
 const {
   isLoggedIn,
   isAuthenticated,
   authorize,
   isSubscriptionActive,
-} = require("../middlewares/auth.middleware");
-const { SCOPES } = require("../config/user.config");
+} = require('../middlewares/auth.middleware');
+const {SCOPES} = require('../config/user.config');
 const {
   getStoreDetails,
   setStoreDetails,
@@ -30,190 +30,236 @@ const {
   getCategories,
   updateCategory,
   deleteCategory,
-} = require("../controllers/settings.controller");
+  getAllTaxGroups,
+  addTaxGroup,
+  updateTaxGroup,
+  getTaxGroup,
+  deletTaxGroup,
+} = require('../controllers/settings.controller');
 
 const router = Router();
 
 router.get(
-  "/store-setting",
+  '/store-setting',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  getStoreDetails
+  getStoreDetails,
 );
 router.post(
-  "/store-setting",
+  '/store-setting',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  setStoreDetails
+  setStoreDetails,
 );
 
 router.get(
-  "/print-setting",
+  '/print-setting',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  getPrintSettings
+  getPrintSettings,
 );
 router.post(
-  "/print-setting",
+  '/print-setting',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  setPrintSettings
+  setPrintSettings,
 );
 
 router.get(
-  "/taxes",
+  '/taxes',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  getAllTaxes
+  getAllTaxes,
 );
 router.post(
-  "/taxes/add",
+  '/taxes/add',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  addTax
+  addTax,
 );
 router.post(
-  "/taxes/:id/update",
+  '/taxes/:id/update',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  updateTax
+  updateTax,
 );
 router.get(
-  "/taxes/:id",
+  '/taxes/:id',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  getTax
+  getTax,
 );
 router.delete(
-  "/taxes/:id",
+  '/taxes/:id',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  deletTax
+  deletTax,
+);
+
+router.get(
+  '/tax-groups',
+  isLoggedIn,
+  isAuthenticated,
+  isSubscriptionActive,
+  authorize([SCOPES.SETTINGS]),
+  getAllTaxGroups,
+);
+router.post(
+  '/tax-groups/add',
+  isLoggedIn,
+  isAuthenticated,
+  isSubscriptionActive,
+  authorize([SCOPES.SETTINGS]),
+  addTaxGroup,
+);
+router.post(
+  '/tax-groups/:id/update',
+  isLoggedIn,
+  isAuthenticated,
+  isSubscriptionActive,
+  authorize([SCOPES.SETTINGS]),
+  updateTaxGroup,
+);
+router.get(
+  '/tax-groups/:id',
+  isLoggedIn,
+  isAuthenticated,
+  isSubscriptionActive,
+  authorize([SCOPES.SETTINGS]),
+  getTaxGroup,
+);
+router.delete(
+  '/tax-groups/:id',
+  isLoggedIn,
+  isAuthenticated,
+  isSubscriptionActive,
+  authorize([SCOPES.SETTINGS]),
+  deletTaxGroup,
 );
 
 router.post(
-  "/payment-types/add",
+  '/payment-types/add',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  addPaymentType
+  addPaymentType,
 );
 router.get(
-  "/payment-types",
+  '/payment-types',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  getAllPaymentTypes
+  getAllPaymentTypes,
 );
 router.post(
-  "/payment-types/:id/update",
+  '/payment-types/:id/update',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  updatePaymentType
+  updatePaymentType,
 );
 router.post(
-  "/payment-types/:id/toggle",
+  '/payment-types/:id/toggle',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  togglePaymentType
+  togglePaymentType,
 );
 router.delete(
-  "/payment-types/:id",
+  '/payment-types/:id',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  deletePaymentType
+  deletePaymentType,
 );
 
 router.post(
-  "/store-tables/add",
+  '/store-tables/add',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  addStoreTable
+  addStoreTable,
 );
 router.get(
-  "/store-tables",
+  '/store-tables',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  getAllStoreTables
+  getAllStoreTables,
 );
 router.post(
-  "/store-tables/:id/update",
+  '/store-tables/:id/update',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  updateStoreTable
+  updateStoreTable,
 );
 router.delete(
-  "/store-tables/:id",
+  '/store-tables/:id',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  deleteStoreTable
+  deleteStoreTable,
 );
 
 router.post(
-  "/categories/add",
+  '/categories/add',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  addCategory
+  addCategory,
 );
 router.get(
-  "/categories",
+  '/categories',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  getCategories
+  getCategories,
 );
 router.post(
-  "/categories/:id/update",
+  '/categories/:id/update',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  updateCategory
+  updateCategory,
 );
 router.delete(
-  "/categories/:id",
+  '/categories/:id',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
   authorize([SCOPES.SETTINGS]),
-  deleteCategory
+  deleteCategory,
 );
 
 module.exports = router;

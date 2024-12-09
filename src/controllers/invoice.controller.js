@@ -2,11 +2,11 @@ const {
   getInvoicesDB,
   getInvoiceOrdersDB,
   searchInvoicesDB,
-} = require("../services/invoice.service");
+} = require('../services/invoice.service');
 const {
   getPrintSettingDB,
   getStoreSettingDB,
-} = require("../services/settings.service");
+} = require('../services/settings.service');
 
 exports.getInvoicesInit = async (req, res) => {
   try {
@@ -25,7 +25,7 @@ exports.getInvoicesInit = async (req, res) => {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong! Please try later!",
+      message: 'Something went wrong! Please try later!',
     });
   }
 };
@@ -41,15 +41,15 @@ exports.getInvoices = async (req, res) => {
     if (!type) {
       return res.status(400).json({
         success: false,
-        message: "Please provide required details!",
+        message: 'Please provide required details!',
       });
     }
 
-    if (type == "custom") {
+    if (type == 'custom') {
       if (!(from && to)) {
         return res.status(400).json({
           success: false,
-          message: "Please provide required details from & to dates!",
+          message: 'Please provide required details from & to dates!',
         });
       }
     }
@@ -79,10 +79,11 @@ exports.getInvoices = async (req, res) => {
           customer_id,
           name,
           email,
+          paymentType,
         } = invoice;
 
         const existingInvoiceId = invoices.findIndex(
-          (i) => i.invoice_id == invoice_id
+          i => i.invoice_id == invoice_id,
         );
 
         if (existingInvoiceId == -1) {
@@ -100,7 +101,8 @@ exports.getInvoices = async (req, res) => {
             customer_id,
             name,
             email,
-            orders: [{ order_id, payment_status, token_no }],
+            paymentType,
+            orders: [{order_id, payment_status, token_no}],
           });
         } else {
           invoices[existingInvoiceId].orders.push({
@@ -119,7 +121,7 @@ exports.getInvoices = async (req, res) => {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong! Please try later!",
+      message: 'Something went wrong! Please try later!',
     });
   }
 };
@@ -132,7 +134,7 @@ exports.searchInvoices = async (req, res) => {
     if (!searchString) {
       return res.status(400).json({
         success: false,
-        message: "Please provide required details!",
+        message: 'Please provide required details!',
       });
     }
 
@@ -164,7 +166,7 @@ exports.searchInvoices = async (req, res) => {
         } = invoice;
 
         const existingInvoiceId = invoices.findIndex(
-          (i) => i.invoice_id == invoice_id
+          i => i.invoice_id == invoice_id,
         );
 
         if (existingInvoiceId == -1) {
@@ -182,7 +184,7 @@ exports.searchInvoices = async (req, res) => {
             customer_id,
             name,
             email,
-            orders: [{ order_id, payment_status, token_no }],
+            orders: [{order_id, payment_status, token_no}],
           });
         } else {
           invoices[existingInvoiceId].orders.push({
@@ -201,7 +203,7 @@ exports.searchInvoices = async (req, res) => {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong! Please try later!",
+      message: 'Something went wrong! Please try later!',
     });
   }
 };
@@ -214,26 +216,26 @@ exports.getInvoiceOrders = async (req, res) => {
     if (!orderIds || orderIds?.length == 0) {
       return res.status(400).JSON({
         success: false,
-        message: "Invalid Request!",
+        message: 'Invalid Request!',
       });
     }
 
-    const orderIdsParams = orderIds.join(",");
+    const orderIdsParams = orderIds.join(',');
 
-    const { kitchenOrders, kitchenOrdersItems, addons } =
+    const {kitchenOrders, kitchenOrdersItems, addons} =
       await getInvoiceOrdersDB(orderIdsParams);
 
-    const formattedOrders = kitchenOrders.map((order) => {
+    const formattedOrders = kitchenOrders.map(order => {
       const orderItems = kitchenOrdersItems.filter(
-        (oi) => oi.order_id == order.id
+        oi => oi.order_id == order.id,
       );
 
       orderItems.forEach((oi, index) => {
         const addonsIds = oi?.addons ? JSON.parse(oi?.addons) : null;
 
         if (addonsIds) {
-          const itemAddons = addonsIds.map((addonId) => {
-            const addon = addons.filter((a) => a.id == addonId);
+          const itemAddons = addonsIds.map(addonId => {
+            const addon = addons.filter(a => a.id == addonId);
             return addon[0];
           });
           orderItems[index].addons = [...itemAddons];
@@ -269,16 +271,16 @@ exports.getInvoiceOrders = async (req, res) => {
         const taxRate = Number(tax_rate);
 
         let addonsTotal = 0;
-        if(addons) {
+        if (addons) {
           for (const addon of addons) {
-            addonsTotal += Number(addon.price)
+            addonsTotal += Number(addon.price);
           }
         }
 
         const itemPrice =
           Number(variant_price ? variant_price : price) * Number(quantity);
 
-        if (taxType == "exclusive") {
+        if (taxType == 'exclusive') {
           const tax = (itemPrice * taxRate) / 100;
           const priceWithTax = itemPrice + tax;
 
@@ -288,7 +290,7 @@ exports.getInvoiceOrders = async (req, res) => {
 
           items[index].itemTotal = priceWithTax / quantity + addonsTotal;
           items[index].price = priceWithTax / quantity + addonsTotal;
-        } else if (taxType == "inclusive") {
+        } else if (taxType == 'inclusive') {
           const tax = itemPrice - itemPrice * (100 / (100 + taxRate));
           const priceWithoutTax = itemPrice - tax;
 
@@ -319,7 +321,7 @@ exports.getInvoiceOrders = async (req, res) => {
     console.error(error);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong! Please try later!",
+      message: 'Something went wrong! Please try later!',
     });
   }
 };
