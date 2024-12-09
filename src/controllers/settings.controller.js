@@ -239,6 +239,7 @@ exports.updateTax = async (req, res) => {
     const title = req.body.title;
     const taxRate = req.body.rate;
     const type = req.body.type;
+    const taxGroupId = req.body.tax_group_id;
 
     if (!(title && taxRate && type)) {
       return res.status(400).json({
@@ -247,7 +248,7 @@ exports.updateTax = async (req, res) => {
       });
     }
 
-    await updateTaxDB(taxId, title, taxRate, type, tenantId);
+    await updateTaxDB(taxId, title, taxRate, type, tenantId, taxGroupId);
     return res.status(200).json({
       success: true,
       message: `Tax Details Updated.`,

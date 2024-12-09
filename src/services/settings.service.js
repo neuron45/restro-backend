@@ -324,7 +324,7 @@ exports.deleteTaxDB = async (id, tenantId) => {
   }
 };
 
-exports.updateTaxDB = async (id, title, rate, type, tenantId) => {
+exports.updateTaxDB = async (id, title, rate, type, tenantId, taxGroupId) => {
   const conn = await getMySqlPromiseConnection();
 
   try {
@@ -335,7 +335,19 @@ exports.updateTaxDB = async (id, title, rate, type, tenantId) => {
         WHERE id = ? AND tenant_id = ?
         `;
 
+    const delSql = `
+        delete from taxes_tax_groups where tax_id = ?;
+    `;
+
+    const addSql = `
+    INSERT INTO taxes_tax_groups
+    (tax_id, tax_group_id, tenant_id)
+    VALUES (?, ?, ?);
+    `;
+
     await conn.query(sql, [title, rate, type, id, tenantId]);
+    await conn.query(delSql, [id]);
+    await conn.query(addSql, [id, taxGroupId, tenantId]);
     return;
   } catch (error) {
     console.error(error);
