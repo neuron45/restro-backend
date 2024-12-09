@@ -134,14 +134,11 @@ exports.getPOSQROrdersDB = async tenantId => {
         st.table_title,
         st.floor,
         o.status,
-        o.payment_status,
-        payment_types.title as paymentType,
-        payment_types.id as paymentTypeId
+        o.payment_status
       FROM
         qr_orders o
         LEFT JOIN customers c ON o.customer_id = c.phone
         LEFT JOIN store_tables st ON o.table_id = st.id
-        LEFT JOIN payment_types ON payment_types.id = o.payment_type_id
       WHERE
         o.status NOT IN('completed', 'cancelled')
         AND o.tenant_id = ?
