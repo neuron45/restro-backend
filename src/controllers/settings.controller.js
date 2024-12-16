@@ -302,7 +302,7 @@ exports.getTaxGroup = async (req, res) => {
   try {
     const tenantId = req.user.tenant_id;
     const taxGroupId = req.params.id;
-    const result = await getTaxGroupsDB(taxGroupId, tenantId);
+    const result = await getTaxGroupDB(taxGroupId, tenantId);
     return res.status(200).json(result);
   } catch (error) {
     console.error(error);
