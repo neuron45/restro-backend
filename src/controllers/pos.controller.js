@@ -4,6 +4,7 @@ const {
   getPrintSettingDB,
   getStoreSettingDB,
   getStoreTablesDB,
+  getAllTaxGroupsAndTaxesDB,
 } = require('../services/settings.service');
 const {
   getAllMenuItemsDB,
@@ -37,10 +38,12 @@ exports.getPOSInitData = async (req, res) => {
       getStoreTablesDB(tenantId),
     ]);
 
-    const [menuItems, addons, variants] = await Promise.all([
+    // add tax groups and taxes
+    const [menuItems, addons, variants, taxGroups] = await Promise.all([
       getAllMenuItemsDB(tenantId),
       getAllAddonsDB(tenantId),
       getAllVariantsDB(tenantId),
+      getAllTaxGroupsAndTaxesDB(tenantId),
     ]);
 
     const formattedMenuItems = menuItems.map(item => {
@@ -63,6 +66,7 @@ exports.getPOSInitData = async (req, res) => {
       storeSettings,
       storeTables,
       menuItems: formattedMenuItems,
+      taxGroups,
     });
   } catch (error) {
     console.error(error);

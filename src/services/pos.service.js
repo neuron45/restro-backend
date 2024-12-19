@@ -157,10 +157,8 @@ exports.getPOSQROrdersDB = async tenantId => {
             oi.order_id,
             oi.item_id,
             mi.title AS item_title,
-            mi.tax_id,
-            t.title as tax_title,
-            t.rate as tax_rate,
-            t.type as tax_type,
+            mi.net_price,
+            mi.tax_group_id,
             oi.variant_id,
             miv.title AS variant_title,
             oi.price,
@@ -172,11 +170,10 @@ exports.getPOSQROrdersDB = async tenantId => {
           FROM
             qr_order_items oi
             LEFT JOIN menu_items mi ON oi.item_id = mi.id
-            LEFT JOIN taxes t ON t.id = mi.tax_id
             LEFT JOIN menu_item_variants miv ON oi.item_id = miv.item_id
             AND oi.variant_id = miv.id
           WHERE
-            oi.order_id IN (${orderIds})
+          oi.order_id IN (${orderIds})
         `;
       const [kitchenOrdersItemsResult] = await conn.query(sql2);
       kitchenOrdersItems = kitchenOrdersItemsResult;

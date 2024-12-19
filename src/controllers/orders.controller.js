@@ -239,7 +239,69 @@ exports.getOrdersPaymentSummary = async (req, res) => {
     let subtotal = 0;
     let taxTotal = 0;
     let total = 0;
+    let taxBreakdown = {};
 
+    // old
+    // for (const order of formattedOrders) {
+    //   const items = order.items;
+
+    //   for (let index = 0; index < items.length; index++) {
+    //     const item = items[index];
+
+    //     const {
+    //       variant_price,
+    //       price,
+    //       tax_rate,
+    //       tax_type: taxType,
+    //       quantity,
+    //       addons,
+    //     } = item;
+
+    //     const taxRate = Number(tax_rate);
+
+    //     // const addonsTotal = addons ? addons?.reduce((pV, cV)=>Number(pV?.price || 0 )+ Number(cV?.price), 0) : 0;
+    //     let addonsTotal = 0;
+    //     if (addons) {
+    //       for (const addon of addons) {
+    //         addonsTotal += Number(addon.price);
+    //       }
+    //     }
+
+    //     const itemPrice =
+    //       Number(variant_price ? variant_price : price) * Number(quantity);
+
+    //     if (taxType == 'exclusive') {
+    //       const tax = (itemPrice * taxRate) / 100;
+    //       const priceWithTax = itemPrice + tax;
+
+    //       taxTotal += tax;
+    //       subtotal += itemPrice + addonsTotal * quantity;
+    //       total += priceWithTax + addonsTotal * quantity;
+
+    //       items[index].itemTotal = priceWithTax / quantity + addonsTotal;
+    //       items[index].price = priceWithTax / quantity + addonsTotal;
+    //     } else if (taxType == 'inclusive') {
+    //       const tax = itemPrice - itemPrice * (100 / (100 + taxRate));
+    //       const priceWithoutTax = itemPrice - tax;
+
+    //       taxTotal += tax;
+    //       subtotal += priceWithoutTax + addonsTotal * quantity;
+    //       total += itemPrice + addonsTotal * quantity;
+
+    //       items[index].itemTotal = itemPrice / quantity + addonsTotal;
+    //       items[index].price = itemPrice / quantity + addonsTotal;
+    //     } else {
+    //       subtotal += itemPrice + addonsTotal * quantity;
+    //       total += itemPrice + addonsTotal * quantity;
+
+    //       items[index].itemTotal = itemPrice / quantity + addonsTotal;
+    //       items[index].price = itemPrice / quantity + addonsTotal;
+    //     }
+    //   }
+    // }
+    // calculate summary
+
+    // new
     for (const order of formattedOrders) {
       const items = order.items;
 
@@ -248,62 +310,76 @@ exports.getOrdersPaymentSummary = async (req, res) => {
 
         const {
           variant_price,
-          price,
-          tax_rate,
-          tax_type: taxType,
+          net_price,
+          taxes, // This should be an array of taxes from the tax group
           quantity,
           addons,
         } = item;
 
-        const taxRate = Number(tax_rate);
-
-        // const addonsTotal = addons ? addons?.reduce((pV, cV)=>Number(pV?.price || 0 )+ Number(cV?.price), 0) : 0;
+        let itemPrice =
+          Number(variant_price ? variant_price : net_price) * Number(quantity);
         let addonsTotal = 0;
+
         if (addons) {
           for (const addon of addons) {
-            addonsTotal += Number(addon.price);
+            addonsTotal += Number(addon.net_price);
           }
         }
 
-        const itemPrice =
-          Number(variant_price ? variant_price : price) * Number(quantity);
+        let itemTaxTotal = 0;
+        let priceBeforeTax = itemPrice;
+        let finalPrice = itemPrice;
 
-        if (taxType == 'exclusive') {
-          const tax = (itemPrice * taxRate) / 100;
-          const priceWithTax = itemPrice + tax;
+        // Handle multiple taxes from tax group
+        if (taxes && taxes.length > 0) {
+          for (const tax of taxes) {
+            let taxAmount = 0;
+            const taxRate = Number(tax.rate);
 
-          taxTotal += tax;
-          subtotal += itemPrice + addonsTotal * quantity;
-          total += priceWithTax + addonsTotal * quantity;
-
-          items[index].itemTotal = priceWithTax / quantity + addonsTotal;
-          items[index].price = priceWithTax / quantity + addonsTotal;
-        } else if (taxType == 'inclusive') {
-          const tax = itemPrice - itemPrice * (100 / (100 + taxRate));
-          const priceWithoutTax = itemPrice - tax;
-
-          taxTotal += tax;
-          subtotal += priceWithoutTax + addonsTotal * quantity;
-          total += itemPrice + addonsTotal * quantity;
-
-          items[index].itemTotal = itemPrice / quantity + addonsTotal;
-          items[index].price = itemPrice / quantity + addonsTotal;
-        } else {
-          subtotal += itemPrice + addonsTotal * quantity;
-          total += itemPrice + addonsTotal * quantity;
-
-          items[index].itemTotal = itemPrice / quantity + addonsTotal;
-          items[index].price = itemPrice / quantity + addonsTotal;
+            if (tax.is_inclusive) {
+              // For inclusive tax, extract tax amount from price
+              const taxAmount = itemPrice - itemPrice * (100 / (100 + taxRate));
+              itemTaxTotal += taxAmount;
+              priceBeforeTax -= taxAmount;
+            } else {
+              // For exclusive tax, add tax amount to price
+              const taxAmount = (itemPrice * taxRate) / 100;
+              itemTaxTotal += taxAmount;
+              finalPrice += taxAmount;
+            }
+            // Add to tax breakdown
+            if (!taxBreakdown[tax.title]) {
+              taxBreakdown[tax.title] = {
+                taxTitle: tax.title,
+                totalAmount: itemTaxTotal,
+              };
+            }
+            taxBreakdown[tax.title].totalAmount += taxAmount;
+          }
         }
+
+        // Add addons to totals
+        const addonsTotalWithQuantity = addonsTotal * quantity;
+        priceBeforeTax += addonsTotalWithQuantity;
+        finalPrice += addonsTotalWithQuantity;
+
+        // Update running totals
+        subtotal += priceBeforeTax;
+        taxTotal += itemTaxTotal;
+        total += finalPrice;
+
+        // Update item totals
+        items[index].itemTotal = finalPrice / quantity;
+        items[index].net_price = finalPrice / quantity;
       }
     }
-    // calculate summary
 
     return res.status(200).json({
       subtotal,
       taxTotal,
       total,
       orders: formattedOrders,
+      taxBreakdown,
     });
   } catch (error) {
     console.error(error);

@@ -2,7 +2,6 @@ const {getMySqlPromiseConnection} = require('../config/mysql.db');
 
 exports.addMenuItemDB = async (
   title,
-  price,
   netPrice,
   taxGroupId,
   categoryId,
@@ -12,14 +11,13 @@ exports.addMenuItemDB = async (
   try {
     const sql = `
         INSERT INTO menu_items
-        (title, price, net_price, tax_group_id, category, tenant_id)
+        (title, net_price, tax_group_id, category, tenant_id)
         VALUES
-        (?, ?, ?, ?, ?, ?);
+        (?, ?, ?, ?, ?);
         `;
 
     const [result] = await conn.query(sql, [
       title,
-      price,
       netPrice,
       taxGroupId,
       categoryId,
@@ -38,7 +36,6 @@ exports.addMenuItemDB = async (
 exports.updateMenuItemDB = async (
   id,
   title,
-  price,
   netPrice,
   taxGroupId,
   categoryId,
@@ -48,13 +45,12 @@ exports.updateMenuItemDB = async (
   try {
     const sql = `
         UPDATE menu_items SET
-        title = ?, price = ?, net_price = ?, tax_group_id = ?, category = ?
+        title = ?, net_price = ?, tax_group_id = ?, category = ?
         WHERE id = ? AND tenant_id = ?;
         `;
 
     await conn.query(sql, [
       title,
-      price,
       netPrice,
       taxGroupId,
       categoryId,
@@ -118,7 +114,6 @@ exports.getAllMenuItemsDB = async tenantId => {
         SELECT 
         i.id,
         i.title, 
-        i.price,
         i.net_price,
         i.tax_group_id,
         t.title AS tax_group_title,
@@ -148,7 +143,6 @@ exports.getMenuItemDB = async (id, tenantId) => {
         SELECT 
         i.id,
         i.title,
-        price,
         net_price,
         tax_group_id,
         t.title AS tax_group_title,
@@ -174,20 +168,20 @@ exports.getMenuItemDB = async (id, tenantId) => {
 /**
  * @param {number} itemId Menu Item ID to add Addon
  * @param {string} title Title of Addon
- * @param {number} price Additonal Price for addon, Put 0 / null to make addon as free option
+ * @param {number} net_price Additonal Net Price for addon, Put 0 / null to make addon as free option
  * @returns {Promise<number>}
  *  */
-exports.addMenuItemAddonDB = async (itemId, title, price, tenantId) => {
+exports.addMenuItemAddonDB = async (itemId, title, netPrice, tenantId) => {
   const conn = await getMySqlPromiseConnection();
   try {
     const sql = `
         INSERT INTO menu_item_addons
-        (item_id, title, price, tenant_id)
+        (item_id, title, net_price, tenant_id)
         VALUES
         (?, ?, ?, ?);
         `;
 
-    const [result] = await conn.query(sql, [itemId, title, price, tenantId]);
+    const [result] = await conn.query(sql, [itemId, title, netPrice, tenantId]);
     return result.insertId;
   } catch (error) {
     console.error(error);
@@ -201,26 +195,20 @@ exports.addMenuItemAddonDB = async (itemId, title, price, tenantId) => {
  * @param {number} itemId Menu Item ID
  * @param {number} addonId Addon ID
  * @param {string} title Title of Addon
- * @param {number} price Additonal Price for addon, Put 0 / null to make addon as free option
+ * @param {number} net_price Additonal Net Price for addon, Put 0 / null to make addon as free option
  * @returns {Promise<void>}
  *  */
-exports.updateMenuItemAddonDB = async (
-  itemId,
-  addonId,
-  title,
-  price,
-  tenantId,
-) => {
+exports.updateMenuItemAddonDB = async (itemId, addonId, title, tenantId) => {
   const conn = await getMySqlPromiseConnection();
   try {
     const sql = `
         UPDATE menu_item_addons
         SET
-        title = ?, price = ?
+        title = ?
         WHERE id = ? AND item_id = ? AND tenant_id = ?
         `;
 
-    await conn.query(sql, [title, price, addonId, itemId, tenantId]);
+    await conn.query(sql, [title, addonId, itemId, tenantId]);
     return;
   } catch (error) {
     console.error(error);
@@ -263,7 +251,7 @@ exports.getMenuItemAddonsDB = async (itemId, tenantId) => {
   const conn = await getMySqlPromiseConnection();
   try {
     const sql = `
-        SELECT id, item_id, title, price FROM menu_item_addons
+        SELECT id, item_id, title, net_price FROM menu_item_addons
         WHERE item_id = ? AND tenant_id = ?;
         `;
 
@@ -282,7 +270,7 @@ exports.getAllAddonsDB = async tenantId => {
   const conn = await getMySqlPromiseConnection();
   try {
     const sql = `
-        SELECT id, item_id, title, price FROM menu_item_addons
+        SELECT id, item_id, title, net_price FROM menu_item_addons
         WHERE tenant_id = ?;
         `;
 
@@ -300,20 +288,25 @@ exports.getAllAddonsDB = async tenantId => {
 /**
  * @param {number} itemId Menu Item ID to add Variant
  * @param {string} title Title of Variant
- * @param {number} price Additonal Price for Variant, Put 0 / null to make Variant as free option
+ * @param {number} net_price Additonal net Price for Variant, Put 0 / null to make Variant as free option
  * @returns {Promise<number>}
  *  */
-exports.addMenuItemVariantDB = async (itemId, title, price, tenantId) => {
+exports.addMenuItemVariantDB = async (itemId, title, net_price, tenantId) => {
   const conn = await getMySqlPromiseConnection();
   try {
     const sql = `
         INSERT INTO menu_item_variants
-        (item_id, title, price, tenant_id)
+        (item_id, title, net_price, tenant_id)
         VALUES
         (?, ?, ?, ?);
         `;
 
-    const [result] = await conn.query(sql, [itemId, title, price, tenantId]);
+    const [result] = await conn.query(sql, [
+      itemId,
+      title,
+      net_price,
+      tenantId,
+    ]);
 
     return result.insertId;
   } catch (error) {
@@ -328,7 +321,7 @@ exports.updateMenuItemVariantDB = async (
   itemId,
   variantId,
   title,
-  price,
+  net_price,
   tenantId,
 ) => {
   const conn = await getMySqlPromiseConnection();
@@ -336,11 +329,11 @@ exports.updateMenuItemVariantDB = async (
     const sql = `
         UPDATE menu_item_variants
         SET
-        title = ?, price = ?
+        title = ?, net_price = ?
         WHERE item_id = ? AND id = ? AND tenant_id = ?
         `;
 
-    await conn.query(sql, [title, price, itemId, variantId, tenantId]);
+    await conn.query(sql, [title, net_price, itemId, variantId, tenantId]);
     return;
   } catch (error) {
     console.error(error);
@@ -373,7 +366,7 @@ exports.getMenuItemVariantsDB = async (itemId, tenantId) => {
   const conn = await getMySqlPromiseConnection();
   try {
     const sql = `
-        SELECT id, item_id, title, price FROM menu_item_variants
+        SELECT id, item_id, title, net_price FROM menu_item_variants
         WHERE item_id = ? AND tenant_id = ?;
         `;
 
@@ -391,7 +384,7 @@ exports.getAllVariantsDB = async tenantId => {
   const conn = await getMySqlPromiseConnection();
   try {
     const sql = `
-        SELECT id, item_id, title, price FROM menu_item_variants
+        SELECT id, item_id, title, net_price FROM menu_item_variants
         WHERE tenant_id = ?;
         `;
 

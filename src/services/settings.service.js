@@ -286,6 +286,45 @@ exports.getTaxesDB = async tenantId => {
   }
 };
 
+exports.getAllTaxGroupsAndTaxesDB = async tenantId => {
+  const conn = await getMySqlPromiseConnection();
+
+  try {
+    const sql = `
+      SELECT 
+        tg.id,
+        tg.title,
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'id', t.id,
+            'title', t.title,
+            'rate', t.rate,
+            'type', t.type
+          )
+        ) as taxes
+      FROM tax_groups tg
+      LEFT JOIN taxes_tax_groups ttg ON tg.id = ttg.tax_group_id
+      LEFT JOIN taxes t ON t.id = ttg.tax_id
+      WHERE tg.tenant_id = ?
+      GROUP BY tg.id, tg.title
+    `;
+
+    const [result] = await conn.query(sql, [tenantId]);
+
+    // Transform the taxes string into actual JSON array
+    // Handle cases where tax group has no taxes (will be null)
+    return result.map(group => ({
+      ...group,
+      taxes: group.taxes ? group.taxes : [],
+    }));
+  } catch (error) {
+    console.error(error);
+    throw error;
+  } finally {
+    conn.release();
+  }
+};
+
 exports.getTaxDB = async (taxId, tenantId) => {
   const conn = await getMySqlPromiseConnection();
 

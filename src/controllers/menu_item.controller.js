@@ -26,18 +26,17 @@ const fs = require('fs');
 exports.addMenuItem = async (req, res) => {
   try {
     const tenantId = req.user.tenant_id;
-    const {title, price, netPrice, taxGroupId, categoryId} = req.body;
+    const {title, netPrice, taxGroupId, categoryId} = req.body;
 
-    if (!(title && price)) {
+    if (!(title && netPrice)) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide required details: title, price',
+        message: 'Please provide required details: title, net price',
       });
     }
 
     const menuItemId = await addMenuItemDB(
       title,
-      price,
       netPrice,
       taxGroupId,
       categoryId,
@@ -62,9 +61,9 @@ exports.updateMenuItem = async (req, res) => {
   try {
     const tenantId = req.user.tenant_id;
     const id = req.params.id;
-    const {title, price, netPrice, taxGroupId, categoryId} = req.body;
+    const {title, netPrice, taxGroupId, categoryId} = req.body;
 
-    if (!(title && price)) {
+    if (!(title && netPrice)) {
       return res.status(400).json({
         success: false,
         message: 'Please provide required details: title, price',
@@ -74,7 +73,6 @@ exports.updateMenuItem = async (req, res) => {
     await updateMenuItemDB(
       id,
       title,
-      price,
       netPrice,
       taxGroupId,
       categoryId,
@@ -282,19 +280,19 @@ exports.addMenuItemAddon = async (req, res) => {
   try {
     const tenantId = req.user.tenant_id;
     const itemId = req.params.id;
-    const {title, price} = req.body;
+    const {title, netPrice} = req.body;
 
-    if (!title) {
+    if (!(title && netPrice)) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide required details: title',
+        message: 'Please provide required details: title, net price',
       });
     }
 
     const menuItemAddonId = await addMenuItemAddonDB(
       itemId,
       title,
-      price,
+      netPrice,
       tenantId,
     );
 
@@ -316,7 +314,7 @@ exports.updateMenuItemAddon = async (req, res) => {
     const tenantId = req.user.tenant_id;
     const itemId = req.params.id;
     const addonId = req.params.addonId;
-    const {title, price} = req.body;
+    const {title, netPrice} = req.body;
 
     if (!title) {
       return res.status(400).json({
@@ -325,7 +323,7 @@ exports.updateMenuItemAddon = async (req, res) => {
       });
     }
 
-    await updateMenuItemAddonDB(itemId, addonId, title, price, tenantId);
+    await updateMenuItemAddonDB(itemId, addonId, title, netPrice, tenantId);
 
     return res.status(200).json({
       success: true,
@@ -403,7 +401,7 @@ exports.addMenuItemVariant = async (req, res) => {
   try {
     const tenantId = req.user.tenant_id;
     const itemId = req.params.id;
-    const {title, price} = req.body;
+    const {title, netPrice} = req.body;
 
     if (!title) {
       return res.status(400).json({
@@ -415,7 +413,7 @@ exports.addMenuItemVariant = async (req, res) => {
     const menuItemVariantId = await addMenuItemVariantDB(
       itemId,
       title,
-      price,
+      netPrice,
       tenantId,
     );
 
@@ -437,7 +435,7 @@ exports.updateMenuItemVariant = async (req, res) => {
     const tenantId = req.user.tenant_id;
     const itemId = req.params.id;
     const variantId = req.params.variantId;
-    const {title, price} = req.body;
+    const {title, netPrice} = req.body;
 
     if (!title) {
       return res.status(400).json({
@@ -446,7 +444,7 @@ exports.updateMenuItemVariant = async (req, res) => {
       });
     }
 
-    await updateMenuItemVariantDB(itemId, variantId, title, price, tenantId);
+    await updateMenuItemVariantDB(itemId, variantId, title, netPrice, tenantId);
 
     return res.status(200).json({
       success: true,
