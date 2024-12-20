@@ -8,6 +8,8 @@ const {
   getAllInventoryUnitsDB,
   addStockMovementDB,
   remveStockMovementDB,
+  updateInventoryUnitDB,
+  addInventoryUnitDB,
 } = require('../services/inventory.service');
 
 const path = require('path');
@@ -176,6 +178,7 @@ exports.getAllInventoryItems = async (req, res) => {
         imageUrl: item.image_url,
         unitId: item.unit_id,
         unitTitle: item.unit_title,
+        unitQuantity: item.unit_quantity,
       })),
     );
   } catch (error) {
@@ -225,6 +228,65 @@ exports.getAllInventoryUnits = async (req, res) => {
     });
   }
 };
+
+exports.updateInventoryUnit = async (req, res) => {
+  try {
+    const tenantId = req.user.tenant_id;
+    const id = req.params.id;
+    const {title, quantity, description} = req.body;
+
+    if (!(title && quantity && description)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'Please provide required details: title, quantity, description',
+      });
+    }
+
+    await updateInventoryUnitDB(id, title, quantity, description, tenantId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Inventory Unit Updated.',
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: 'Something went wrong! Please try later!',
+    });
+  }
+};
+
+exports.addInventoryUnit = async (req, res) => {
+  try {
+    const tenantId = req.user.tenant_id;
+    const {title, quantity, description} = req.body;
+
+    if (!(title && quantity && description)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'Please provide required details: title, quantity, description',
+      });
+    }
+
+    await addInventoryUnitDB(title, quantity, description, tenantId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Inventory Unit added.',
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: 'Something went wrong! Please try later!',
+    });
+  }
+};
+
+// updateInventoryUnit
 
 exports.addStock = async (req, res) => {
   try {

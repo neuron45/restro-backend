@@ -123,6 +123,7 @@ exports.getAllInventoryItemsDB = async (tenantId, assigned) => {
         i.image_url,
         u.title AS unit_title,
         u.id AS unit_id,
+        u.quantity AS unit_quantity,
         i.image_url
         FROM inventory_items i
         LEFT JOIN inventory_units u ON i.unit_id = u.id
@@ -177,6 +178,57 @@ exports.getAllInventoryUnitsDB = async tenantId => {
 
     const [result] = await conn.query(sql, [tenantId]);
     return result;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  } finally {
+    conn.release();
+  }
+};
+exports.updateInventoryUnitDB = async (
+  id,
+  title,
+  quantity,
+  description,
+  tenantId,
+) => {
+  const conn = await getMySqlPromiseConnection();
+  try {
+    const sql = `
+        UPDATE inventory_units SET
+        title = ?, quantity = ?, description = ?
+        WHERE id = ? AND tenant_id = ?;
+        `;
+
+    await conn.query(sql, [title, quantity, description, id, tenantId]);
+
+    return;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  } finally {
+    conn.release();
+  }
+};
+
+exports.addInventoryUnitDB = async (title, quantity, description, tenantId) => {
+  const conn = await getMySqlPromiseConnection();
+  try {
+    const sql = `
+        INSERT INTO inventory_units
+        (title, quantity, description, tenant_id)
+        VALUES
+        (?, ?, ?, ?);
+        `;
+
+    const [result] = await conn.query(sql, [
+      title,
+      quantity,
+      description,
+      tenantId,
+    ]);
+
+    return result.insertId;
   } catch (error) {
     console.error(error);
     throw error;

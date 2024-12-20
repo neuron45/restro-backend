@@ -18,6 +18,8 @@ const {
   getAllInventoryUnits,
   addStock,
   removeStock,
+  updateInventoryUnit,
+  addInventoryUnit,
 } = require('../controllers/inventory.controller');
 
 const router = Router();
@@ -27,7 +29,7 @@ router.post(
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
-  authorize([SCOPES.INVENTORY]),
+  authorize([SCOPES.STOCK]),
   addInventoryItem,
 );
 router.post(
@@ -35,21 +37,21 @@ router.post(
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
-  authorize([SCOPES.INVENTORY]),
+  authorize([SCOPES.STOCK]),
   updateInventoryItem,
 );
 router.post(
   '/update/:id/upload-photo',
   isLoggedIn,
   isAuthenticated,
-  authorize([SCOPES.INVENTORY]),
+  authorize([SCOPES.STOCK]),
   uploadInventoryItemPhoto,
 );
 router.post(
   '/update/:id/remove-photo',
   isLoggedIn,
   isAuthenticated,
-  authorize([SCOPES.INVENTORY]),
+  authorize([SCOPES.STOCK]),
   removeInventoryItemPhoto,
 );
 router.delete(
@@ -57,7 +59,7 @@ router.delete(
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
-  authorize([SCOPES.INVENTORY]),
+  authorize([SCOPES.STOCK]),
   deleteInventoryItem,
 );
 router.get(
@@ -65,7 +67,7 @@ router.get(
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
-  authorize([SCOPES.INVENTORY]),
+  authorize([SCOPES.STOCK]),
   getAllInventoryItems,
 );
 router.get(
@@ -73,29 +75,45 @@ router.get(
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
-  authorize([SCOPES.INVENTORY]),
+  authorize([SCOPES.STOCK]),
   getAllInventoryUnits,
+);
+router.post(
+  '/units/update/:id',
+  isLoggedIn,
+  isAuthenticated,
+  isSubscriptionActive,
+  authorize([SCOPES.STOCK]),
+  updateInventoryUnit,
+);
+router.post(
+  '/units/add',
+  isLoggedIn,
+  isAuthenticated,
+  isSubscriptionActive,
+  authorize([SCOPES.STOCK]),
+  addInventoryUnit,
 );
 router.get(
   '/:id',
   isLoggedIn,
   isAuthenticated,
   isSubscriptionActive,
-  authorize([SCOPES.INVENTORY]),
+  authorize([SCOPES.STOCK]),
   getInventoryItem,
 );
 router.post(
   '/:id/movements/add',
   isLoggedIn,
   isAuthenticated,
-  authorize([SCOPES.INVENTORY]),
+  authorize([SCOPES.STOCK]),
   addStock,
 );
 router.post(
   '/:id/movements/remove',
   isLoggedIn,
   isAuthenticated,
-  authorize([SCOPES.INVENTORY]),
+  authorize([SCOPES.STOCK]),
   removeStock,
 );
 

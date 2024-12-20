@@ -130,30 +130,51 @@ exports.uploadMenuItemPhoto = async (req, res) => {
     const id = req.params.id;
     const file = req.files.image;
 
-    const s3 = new S3Client({
-      region: process.env.S3_REGION,
-      credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY_ID,
-        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
-      },
-    });
+    if (process.env.FRONTEND_DOMAIN_COOKIE !== 'localhost') {
+      const s3 = new S3Client({
+        region: process.env.S3_REGION,
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID,
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+        },
+      });
 
-    // Create a unique file name
-    const fileExtension = mime.extension(file.mimetype);
-    const fileName = `${tenantId}/menu-items/${id}.${fileExtension}`;
+      // Create a unique file name
+      const fileExtension = mime.extension(file.mimetype);
+      const fileName = `${tenantId}/menu-items/${id}.${fileExtension}`;
 
-    const uploadParams = {
-      Bucket: process.env.S3_BUCKET,
-      Key: fileName,
-      Body: fs.createReadStream(file.tempFilePath),
-      ContentType: file.mimetype,
-      CacheControl: 'max-age=31536000',
-    };
+      const uploadParams = {
+        Bucket: process.env.S3_BUCKET,
+        Key: fileName,
+        Body: fs.createReadStream(file.tempFilePath),
+        ContentType: file.mimetype,
+        CacheControl: 'max-age=31536000',
+      };
 
-    try {
-      // Upload to S3
-      await s3.send(new PutObjectCommand(uploadParams));
-      const imageURL = `${process.env.S3_BASE_URL}/${fileName}`;
+      try {
+        // Upload to S3
+        await s3.send(new PutObjectCommand(uploadParams));
+        const imageURL = `${process.env.S3_BASE_URL}/${fileName}`;
+        await updateMenuItemImageDB(id, imageURL, tenantId);
+
+        return res.status(200).json({
+          success: true,
+          message: 'Menu Item Image Uploaded.',
+          imageURL: imageURL,
+        });
+      } catch (error) {
+        throw error;
+      }
+    } else {
+      const imagePath = path.join(__dirname, `../../public/${tenantId}/`) + id;
+
+      if (!fs.existsSync(path.join(__dirname, `../../public/${tenantId}/`))) {
+        fs.mkdirSync(path.join(__dirname, `../../public/${tenantId}/`));
+      }
+
+      const imageURL = `/public/${tenantId}/${id}`;
+
+      await file.mv(imagePath);
       await updateMenuItemImageDB(id, imageURL, tenantId);
 
       return res.status(200).json({
@@ -161,8 +182,6 @@ exports.uploadMenuItemPhoto = async (req, res) => {
         message: 'Menu Item Image Uploaded.',
         imageURL: imageURL,
       });
-    } catch (error) {
-      throw error;
     }
   } catch (error) {
     console.error('Error uploading image:', error);
