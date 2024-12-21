@@ -143,8 +143,8 @@ exports.getMenuItemDB = async (id, tenantId) => {
         SELECT 
         i.id,
         i.title,
-        net_price,
-        tax_group_id,
+        i.net_price,
+        i.tax_group_id,
         t.title AS tax_group_title,
         category as category_id,
         c.title AS category_title,
