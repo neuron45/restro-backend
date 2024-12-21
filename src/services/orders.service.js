@@ -236,7 +236,7 @@ exports.getOrdersPaymentSummaryDB = async (orderIdsToFindSummary, tenantId) => {
       ].join(',');
       const [addonsResult] = addonIds
         ? await conn.query(
-            `SELECT id, item_id, title, price FROM menu_item_addons WHERE id IN (${addonIds});`,
+            `SELECT id, item_id, title, net_price FROM menu_item_addons WHERE id IN (${addonIds});`,
           )
         : [];
       addons = addonsResult;
