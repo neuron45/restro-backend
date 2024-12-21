@@ -126,11 +126,9 @@ exports.signIn = async (req, res) => {
 
 exports.signUp = async (req, res) => {
   try {
-    const biz_name = req.body.biz_name;
-    const username = req.body.username;
-    const password = req.body.password;
+    const {phone, password, username, biz_name} = req.body;
 
-    if (!(biz_name && username && password)) {
+    if (!(biz_name && username && password && phone)) {
       return res.status(400).json({
         success: false,
         message: 'Please provide required details!',
@@ -150,7 +148,7 @@ exports.signUp = async (req, res) => {
     // encrypt the password
     const encryptedPassword = await bcrypt.hash(password, CONFIG.PASSWORD_SALT);
 
-    await signUpDB(biz_name, username, encryptedPassword);
+    await signUpDB(biz_name, username, encryptedPassword, phone);
 
     return res.status(200).json({
       success: true,

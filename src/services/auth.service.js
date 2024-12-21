@@ -88,21 +88,32 @@ exports.checkEmailExistsDB = async email => {
   }
 };
 
-exports.signUpDB = async (bizName, username, password) => {
+exports.signUpDB = async (bizName, username, password, phone) => {
   const conn = await getMySqlPromiseConnection();
 
   try {
+    // start transaction
+    await conn.beginTransaction();
     const [result] = await conn.query(
       `INSERT INTO tenants (name, is_active, subscription_id) VALUES (?, 0, null)`,
       [bizName],
     );
 
     const sql = `
-        INSERT INTO users (username, password, name, role, tenant_id) VALUES (?, ?, ?, 'admin', ?);
+        INSERT INTO users (username, password, name, role, tenant_id, phone) VALUES (?, ?, ?, 'admin', ?, ?);
         `;
 
-    await conn.query(sql, [username, password, bizName, result.insertId]);
+    await conn.query(sql, [
+      username,
+      password,
+      bizName,
+      result.insertId,
+      phone,
+    ]);
+    await conn.commit();
+    // end transaction
   } catch (error) {
+    await conn.rollback();
     console.error(error);
     throw error;
   } finally {
